@@ -11,12 +11,17 @@ import java.net.*;
  */
 
 public class FileSender {
+
+    private DatagramSocket sendReceiveSocket;
+    private DatagramPacket sendPacket, receivePacket;
+    private PrintService printer;
     
-    private static DatagramSocket sendReceiveSocket;
-    private static DatagramPacket sendPacket, receivePacket;
-    private static PrintService printer;
-    
-    public static void transmit(String filename, int destPort, InetAddress destAddress) throws FileNotFoundException, IOException {
+    public FileSender(Constants.runType runType){
+        this.printer = new PrintService(runType);
+    }
+
+
+    public void send(String filename, int destPort, InetAddress destAddress) throws FileNotFoundException, IOException {
         /*
          * A FileInputStream object is created to read the file
          * as a byte stream. A BufferedInputStream object is wrapped
@@ -25,7 +30,7 @@ public class FileSender {
          */
         BufferedInputStream in = 
             new BufferedInputStream(new FileInputStream(filename));
-
+    
         /*
          * A FileOutputStream object is created to write the file
          * as a byte stream. A BufferedOutputStream object is wrapped
@@ -36,22 +41,31 @@ public class FileSender {
             new BufferedOutputStream(new FileOutputStream("out.dat"));
 
         byte[] data = new byte[512];
+
         int n;
-        
+
         sendReceiveSocket = new DatagramSocket();
         
+
         /* Read the file in 512 byte chunks. */
         while ((n = in.read(data)) != -1) {
             /* 
              * We just read "n" bytes into array data. 
              * Now write them to the output file. 
              */
+            if(n<512){
+                byte[] inputData = new byte[n];
+                System.arraycopy(data, 0, inputData, 0, n);
+                sendPacket = new DatagramPacket(inputData, inputData.length, destAddress, destPort);
+            }
+            else{
+                sendPacket = new DatagramPacket(data, data.length, destAddress, destPort);   
+            }
+
             out.write(data, 0, n);
-            
-        
-    		sendPacket = new DatagramPacket(data, data.length, destAddress, destPort);   
+  
             printer.printPacketInfo("FileSender", "Sending", sendPacket);
-	    	
+
 	    	try{
 	    		sendReceiveSocket.send(sendPacket);
 	    	}
@@ -59,11 +73,12 @@ public class FileSender {
 	    		e.printStackTrace();
 	    		System.exit(1);
 	    	}
-	    	
+
 	    	byte[] msg = new byte[100];
-	    	
+
 	    	receivePacket = new DatagramPacket(msg, msg.length);
 	    	
+
 	    	try{
 	    		sendReceiveSocket.receive(receivePacket);
 	    		printer.printPacketInfo("FileSender", "Receive", receivePacket);
@@ -74,8 +89,6 @@ public class FileSender {
 	    		    System.out.println("Invalid acknowledge received");
 	    		    System.exit(1);
 	    		}
-	    		
-	    		
 	    	}
 	    	catch (IOException e){
 	    		e.printStackTrace();
@@ -85,17 +98,14 @@ public class FileSender {
         in.close();
         out.close();
     }
-    
-    private static boolean isAcknowledgeValid(DatagramPacket a)
-    {
+
+    private static boolean isAcknowledgeValid(DatagramPacket a){
         byte[] data = a.getData();
         
-        if (data[0] == 3 && data[1] == 3){
+        if (data[0] == 0 && data[1] == 4){
             return true;
         }
         return false;
     }
-    
-    
-    
+
 }

@@ -11,40 +11,78 @@ import java.net.*;
  */
 
 public class FileReceiver {
-    
+
     private DatagramSocket sendReceiveSocket;
     private DatagramPacket sendPacket, receivePacket;
     
+    private PrintService printer;
+    private int sendPort;
+    
+    public FileReceiver(Constants.runType runType){
+        printer = new PrintService(runType);
+        try{
+            sendReceiveSocket = new DatagramSocket();
+        } catch(Exception e){
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+    }
+    
+    public void sendPacket(int port, InetAddress destAddress, byte[] ack) throws FileNotFoundException, IOException {
+        try{
+
+            sendPacket = new DatagramPacket(ack, ack.length, destAddress, port);
+    
+            printer.printPacketInfo("FileReceiver", "Sending", sendPacket);
+    
+            sendReceiveSocket.send(sendPacket);
+            sendPort = sendPacket.getPort();
+        }catch (UnknownHostException e) {
+    		e.printStackTrace();
+    		System.exit(1);
+        }
+    	catch (IOException e){
+    		e.printStackTrace();
+    		System.exit(1);
+    	}
+    }
+    
     public void receive(String filename, int destPort, InetAddress destAddress, byte[] ack) throws FileNotFoundException, IOException {
 
-        PrintService printer = new PrintService();
-
-        BufferedWriter bufferedWriter = null;
-        FileWriter fileWriter = null;
+        FileOutputStream bufferedWriter = null;
         
         try{
-            fileWriter = new FileWriter(filename);
-            bufferedWriter = new BufferedWriter(fileWriter);
+           
+            File f = new File(filename);
+            if(f.exists() && !f.isDirectory()) { 
+                filename = "Copy" + filename;
+            }
+           
+            bufferedWriter = new FileOutputStream(filename);
+           
 
             byte[] data = new byte[512];
-        
-            sendReceiveSocket = new DatagramSocket();
-        
+
             do{ 
                 receivePacket = new DatagramPacket(data, data.length);
-
+                System.out.println("Receiving on: " + sendReceiveSocket.getLocalPort());
                 sendReceiveSocket.receive(receivePacket);
                 
+                sendPort = receivePacket.getPort();
+
                 printer.printPacketInfo("FileReceiver", "Receive", receivePacket);
+                
+                bufferedWriter.write(receivePacket.getData(), 0, receivePacket.getLength());
 
-                bufferedWriter.write(receivePacket.getData() + "");
+                //sendPacket = new DatagramPacket(ack, ack.length, destAddress, sendPort);
 
-                sendPacket = new DatagramPacket(ack, ack.length, destAddress, destPort);
-                   
-                printer.printPacketInfo("FileReceiver", "Send", sendPacket);
+                //printer.printPacketInfo("FileReceiver", "Send", sendPacket);
 
-                sendReceiveSocket.send(sendPacket);
-            
+                //sendReceiveSocket.send(sendPacket);
+                
+                sendPacket(sendPort, destAddress, ack);
+
             }while(receivePacket.getLength() == 512);
         }
         catch (UnknownHostException e) {
@@ -59,10 +97,7 @@ public class FileReceiver {
             try{
                 if(bufferedWriter!=null){
                     bufferedWriter.close();
-                }
-                if(fileWriter!=null){
-                    bufferedWriter.close();
-                }
+                }            
             }
             catch (IOException e){
                 e.printStackTrace();

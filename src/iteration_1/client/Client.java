@@ -1,21 +1,37 @@
-package iteration_1;
+package iteration_1.client;
 
 import java.io.*;
 import java.net.*;
 import java.util.Scanner;
+import iteration_1.*;
 
 public class Client {
 	private DatagramPacket sendReceivePacket;
 	private DatagramSocket sendReceiveSocket;
 	private PrintService printer;
+	private String requestType, filename;
+	private Constants.runType runType;
+	private int sendPort;
+	private static final int INTERMEDIATE_HOST = 23;
+	private static final int SERVER = 69;
 
 	   public Client(String requestType, String runType, String mode, String filename){
 	      try {
 	         // Construct a datagram socket and bind it to any available 
 	         // port on the local host machine. This socket will be used to
 	         // send and receive UDP Datagram packets.
+	         this.requestType = requestType;
+	         this.filename = filename;
 	         sendReceiveSocket = new DatagramSocket();
-	         printer = new PrintService();
+             sendPort = mode.equals("normal") ? SERVER: INTERMEDIATE_HOST;
+             
+             if(runType.equals("quite")){
+    	          this.runType = Constants.runType.QUITE;
+    	      }else{
+    	          this.runType = Constants.runType.VERBOSE;
+    	      }
+             
+	         this.printer = new PrintService(this.runType);
 	      } catch (SocketException se) {   // Can't create the socket.
 	         se.printStackTrace();
 	         System.exit(1);
@@ -27,57 +43,108 @@ public class Client {
 		  ByteArrayOutputStream stream = new ByteArrayOutputStream();
 	      byte[] read_sequence = {0, 1};
 	      byte[] write_sequence = {0, 2};
-	      byte[] invalid_sequence = {1,4};
-	      String ex_filename = "test.txt";
 	      String mode = "ocTEt";
-	      byte msg[] = ex_filename.getBytes();	      
-	      int count = 0;
 	      byte data[] = new byte[100]; //buffer for packet receiving 
 	      
-	      while(count!=11){
-	    	  try{
-	              //Construct message
-	    		  if(count == 10){
-	    			  System.out.println("Sending corrupted packet to server");
-	    			  stream.write(invalid_sequence);  
-	    		  }else if(count%2 == 0){//alternate between read and write
-		    		  stream.write(read_sequence);			 
-		    	  }else{
-		    		  stream.write(write_sequence);
-		    	  }
-		    	  stream.write(msg);
-		    	  stream.write(0);
-		    	  stream.write(mode.getBytes());
-		    	  stream.write(0);
-		    	  
-		    	  //Create Packet
-		    	  sendReceivePacket = new DatagramPacket(stream.toByteArray(), stream.toByteArray().length,
-		 	                                         InetAddress.getLocalHost(), 23);	 	     
-		 	      
-		    	  //Print Packet
-		    	  printer.printPacketInfo("Client", "Sending", sendReceivePacket);
-			      
-	
-			      // Send the datagram packet to the server via the send/receive socket. 
-	               sendReceiveSocket.send(sendReceivePacket);
-	               System.out.println("Client: Packet sent.\n");
-	               
-	               
-	               System.out.println("\nWaiting for packet \n");	               
-	               sendReceivePacket = new DatagramPacket(data, data.length);           	
-	     	      // Block until a datagram is received via sendReceiveSocket.  
-	     	      sendReceiveSocket.receive(sendReceivePacket);     	    
-	     	      // Process the received datagram.
-	     	      printer.printPacketInfo("Client", "Recieved", sendReceivePacket);
-			      
-	     	      //Prepare for next loop
-		       	  count++;
-		       	  stream = new ByteArrayOutputStream();
-	    	  }catch(Exception e){
-	    		  e.printStackTrace();
-	    		  System.exit(1);
-	    	  }
+	      try{
+	          
+	          if(requestType.equals("read")){
+	              stream.write(read_sequence);			 
+	    	  }else{
+		    	  stream.write(write_sequence);
+    		  }
+
+        	  stream.write(filename.getBytes());
+	    	  stream.write(0);
+	    	  stream.write(mode.getBytes());
+	    	  stream.write(0);
+	    	  
+              
+              if(requestType.equals("read")){
+	              FileReceiver receiver = new FileReceiver(runType);
+	              receiver.sendPacket(sendPort, InetAddress.getLocalHost(), stream.toByteArray());
+                  System.out.println("Client: Packet sent.\n");	
+                  
+	              receiver.receive(filename, sendPort,  InetAddress.getLocalHost(), Constants.ACK);
+	    	  }else{
+	    	      sendReceivePacket = new DatagramPacket(stream.toByteArray(), stream.toByteArray().length, InetAddress.getLocalHost(), sendPort);
+	    	      	    	  
+      		      //Print Packet
+	    	      printer.printPacketInfo("Client", "Sending", sendReceivePacket);
+    		
+    		      // Send the datagram packet to the server via the send/receive socket. 
+    		      sendReceiveSocket.send(sendReceivePacket);
+                  System.out.println("Client: Packet sent.\n");	    	      
+	    	      
+		    	  System.out.println("\nWaiting for packet \n");	               
+                  sendReceivePacket = new DatagramPacket(data, data.length);
+                  
+     	          // Block until a datagram is received via sendReceiveSocket.  
+     	          sendReceiveSocket.receive(sendReceivePacket);     	    
+     	          // Process the received datagram.
+     	          printer.printPacketInfo("Client", "Recieved", sendReceivePacket);
+     	          sendPort = sendReceivePacket.getPort();
+     	          
+     	          FileSender sender = new FileSender(runType);
+     	          sender.send(filename, sendPort, sendReceivePacket.getAddress());
+    		  }
+
+          }catch(Exception e){
+	          e.printStackTrace();
+    		  System.exit(1);
 	      }
+//
+//	      
+//	      while(count!=11){
+//	    	  try{
+//	              //Construct message
+//	    		  if(count == 10){
+//	    			  System.out.println("Sending corrupted packet to server");
+//	    			  stream.write(invalid_sequence);  
+//	    		  }else if(count%2 == 0){//alternate between read and write
+//		    		  stream.write(read_sequence);			 
+//		    	  }else{
+//		    		  stream.write(write_sequence);
+//		    	  }
+//		    	  stream.write(msg);
+//		    	  stream.write(0);
+//		    	  stream.write(mode.getBytes());
+//		    	  stream.write(0);
+//		    	  
+//		    	  //Create Packet
+//		    	  if(mode.equals("test")){
+//		    	      sendReceivePacket = new DatagramPacket(stream.toByteArray(), stream.toByteArray().length,
+//		 	                                         InetAddress.getLocalHost(), INTERMEDIATE_HOST);
+//		    	  } else {
+//		    	      sendReceivePacket = new DatagramPacket(stream.toByteArray(), stream.toByteArray().length,
+//		 	                                         InetAddress.getLocalHost(), SERVER);
+//	 	          }
+//
+//		 	      
+//		    	  //Print Packet
+//		    	  printer.printPacketInfo("Client", "Sending", sendReceivePacket);
+//			      
+//	
+//			      // Send the datagram packet to the server via the send/receive socket. 
+//	               sendReceiveSocket.send(sendReceivePacket);
+//	               System.out.println("Client: Packet sent.\n");
+//	               
+//	               
+//	               System.out.println("\nWaiting for packet \n");	               
+//	               sendReceivePacket = new DatagramPacket(data, data.length);           	
+//	     	      // Block until a datagram is received via sendReceiveSocket.  
+//	     	      sendReceiveSocket.receive(sendReceivePacket);     	    
+//	     	      // Process the received datagram.
+//	     	      printer.printPacketInfo("Client", "Recieved", sendReceivePacket);
+//			      
+//	     	      //Prepare for next loop
+//		       	  count++;
+//		       	  stream = new ByteArrayOutputStream();
+//	    	  }catch(Exception e){
+//	    		  e.printStackTrace();
+//	    		  System.exit(1);
+//	    	  }
+//	      }
 
 	      // We're finished, so close the socket.
 	      sendReceiveSocket.close();
@@ -187,12 +254,15 @@ public class Client {
                           System.out.println("Invalid Run Type. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
                       } else if (!mode.toLowerCase().equals("normal") && !mode.toLowerCase().equals("test")) {
                           System.out.println("Invalid Mode Specification. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
-                      } else if (!f.exists() || !f.isFile()) {
-                          System.out.println("Invalid file name: Please use a valid file");
+                      } else if (!f.getAbsoluteFile().exists()) {
+                          System.out.println("ERROR 1: File does not exist");
+                      } else if (!f.isFile()) {
+                          System.out.println("ERROR 2: Input is not a file");
                       } else {
-                          System.out.println("Hassaan is currently sending the request. Please hold...");
+                          System.out.println("Processsing the request. Please hold...");
             	          break;
             	      }
+            	      System.out.println("Format: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
     	          } else {
     	              System.out.println("Please follow the format: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
     	          }
@@ -201,7 +271,7 @@ public class Client {
     	  scanner.close();
     	  if(requestType != null && runType != null && mode != null && filename != null){
 	          Client c = new Client(requestType, runType, mode, filename);
-	          //c.sendAndReceive();
+	          c.sendAndReceive();
           }
 	   }
 }
