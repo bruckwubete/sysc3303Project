@@ -46,7 +46,6 @@ public class FileSender {
 
         sendReceiveSocket = new DatagramSocket();
         
-
         /* Read the file in 512 byte chunks. */
         while ((n = in.read(data)) != -1) {
             /* 
@@ -86,7 +85,7 @@ public class FileSender {
 	    		    continue;
 	    		}
 	    		else {
-	    		    System.out.println("Invalid acknowledge received");
+	    		    printer.printMessage("Invalid acknowledge received");
 	    		    System.exit(1);
 	    		}
 	    	}

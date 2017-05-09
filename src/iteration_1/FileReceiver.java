@@ -55,8 +55,10 @@ public class FileReceiver {
         try{
            
             File f = new File(filename);
-            if(f.exists() && !f.isDirectory()) { 
-                filename = "Copy" + filename;
+            if(f.exists() && !f.isDirectory()) {
+                String[] filePathArray = filename.split("/");                
+                filePathArray[filePathArray.length - 1] = "Copy" + filePathArray[filePathArray.length - 1];
+                filename = String.join("/", filePathArray);                
             }
            
             bufferedWriter = new FileOutputStream(filename);
@@ -66,7 +68,7 @@ public class FileReceiver {
 
             do{ 
                 receivePacket = new DatagramPacket(data, data.length);
-                System.out.println("Receiving on: " + sendReceiveSocket.getLocalPort());
+                printer.printMessage("Receiving on: " + sendReceiveSocket.getLocalPort());
                 sendReceiveSocket.receive(receivePacket);
                 
                 sendPort = receivePacket.getPort();

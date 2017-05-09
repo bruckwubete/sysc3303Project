@@ -35,10 +35,10 @@ public class ServerLogicThreadSpawn extends Thread{
 			    byte data[] = new byte[100];
 			      
 			    receivePacket = new DatagramPacket(data, data.length);
-			    System.out.println("Server: Waiting for Packet.\n");
+			    printer.printMessage("Server: Waiting for Packet.\n");
 	
 			    // Block until a datagram packet is received from receiveSocket.
-			    System.out.println("Waiting..."); // so we know we're waiting
+			    printer.printMessage("Waiting..."); // so we know we're waiting
 			    receiveSocket.receive(receivePacket);
 			     
 			    //log the packet
@@ -69,10 +69,10 @@ public class ServerLogicThreadSpawn extends Thread{
     }
 
 	private void validate(byte[] dataByte) throws Exception {
-	    System.out.println("\nServer: Parsing received packet. \n");
+	    printer.printMessage("\nServer: Parsing received packet. \n");
 		if (dataByte[0] != (byte) 0) { 
 			// check first byte - should equal 0 
-			System.out.println("ERROR: First byte should be 0. \nExiting...");
+			printer.printMessage("ERROR: First byte should be 0. \nExiting...");
 			System.exit(1);
 		}
 
@@ -80,13 +80,13 @@ public class ServerLogicThreadSpawn extends Thread{
 		if ((dataByte[1] == (byte) 1) || (dataByte[1] == (byte) 2)) { 
 			writeRead = dataByte[1] == (byte) 1 ? 0:1;
 		} else {
-			System.out.println("ERROR: Second byte incorrect. \nExiting...");
+			printer.printMessage("ERROR: Second byte incorrect. \nExiting...");
 			System.exit(1);
 		}
 		
 		// check last byte should equla 0
 		if (dataByte[receivePacket.getLength() - 1] != (byte) 0) {
-			System.out.println("ERROR: Last byte incorrect.");
+			printer.printMessage("ERROR: Last byte incorrect.");
 			System.exit(1);
 		}
 
@@ -99,11 +99,11 @@ public class ServerLogicThreadSpawn extends Thread{
 			}	
 		}
 		if (count != 1) {
-			System.out.println("ERROR: No 0 byte or to many 0 bytes between strings. \nExiting...");
+			printer.printMessage("ERROR: No 0 byte or to many 0 bytes between strings. \nExiting...");
 			throw new Exception();
 		}
 
-		System.out.println("Server: Parsing finished. \n\n");	
+		printer.printMessage("Server: Parsing finished. \n\n");	
 
 	}
 

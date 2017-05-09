@@ -17,8 +17,8 @@ public class WriteThreadSpawn extends Thread{
         try {
             
           this.receiver = new FileReceiver(this.runType);
-          this.filename = Helper.getFilename(writeRequestPacket);
           this.receiver.sendPacket(this.writeRequestPacket.getPort(), this.writeRequestPacket.getAddress(), Constants.ACK);
+          this.filename = System.getProperty("user.dir").toString() + Constants.serverPath + Helper.getFilename(writeRequestPacket);
           this.receiver.receive(this.filename, this.writeRequestPacket.getPort(), this.writeRequestPacket.getAddress(), Constants.ACK);
        
     	}catch(Exception e){

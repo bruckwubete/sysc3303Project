@@ -53,18 +53,23 @@ public class Client {
 	    	  }else{
 		    	  stream.write(write_sequence);
     		  }
+    		  
+    		  String[] filePathArray = filename.split("/");
+    		  filename = filePathArray[filePathArray.length - 1];    
+    		 
 
         	  stream.write(filename.getBytes());
 	    	  stream.write(0);
 	    	  stream.write(mode.getBytes());
 	    	  stream.write(0);
 	    	  
+	    	  
+	    	  filename = System.getProperty("user.dir").toString() + Constants.clientPath + filename;
               
               if(requestType.equals("read")){
 	              FileReceiver receiver = new FileReceiver(runType);
 	              receiver.sendPacket(sendPort, InetAddress.getLocalHost(), stream.toByteArray());
-                  System.out.println("Client: Packet sent.\n");	
-                  
+                  printer.printMessage("Client: Packet sent.\n");	                                   
 	              receiver.receive(filename, sendPort,  InetAddress.getLocalHost(), Constants.ACK);
 	    	  }else{
 	    	      sendReceivePacket = new DatagramPacket(stream.toByteArray(), stream.toByteArray().length, InetAddress.getLocalHost(), sendPort);
@@ -74,9 +79,9 @@ public class Client {
     		
     		      // Send the datagram packet to the server via the send/receive socket. 
     		      sendReceiveSocket.send(sendReceivePacket);
-                  System.out.println("Client: Packet sent.\n");	    	      
+                  printer.printMessage("Client: Packet sent.\n");	    	      
 	    	      
-		    	  System.out.println("\nWaiting for packet \n");	               
+		    	  printer.printMessage("\nWaiting for packet \n");	               
                   sendReceivePacket = new DatagramPacket(data, data.length);
                   
      	          // Block until a datagram is received via sendReceiveSocket.  
@@ -247,6 +252,11 @@ public class Client {
         	          runType = parameters[1];
         	          mode = parameters[2];
         	          filename = parameters[3];
+        	          
+        	          if(requestType.equals("write")){
+        	              filename = System.getProperty("user.dir").toString() + Constants.clientPath + parameters[3];
+        	          }
+        	          
         	          File f = new File(filename);
         	          if (!requestType.toLowerCase().equals("write") && !requestType.toLowerCase().equals("read")) {
             	          System.out.println("Invalid Request Type. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
@@ -254,9 +264,9 @@ public class Client {
                           System.out.println("Invalid Run Type. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
                       } else if (!mode.toLowerCase().equals("normal") && !mode.toLowerCase().equals("test")) {
                           System.out.println("Invalid Mode Specification. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
-                      } else if (!f.getAbsoluteFile().exists()) {
+                      } else if (requestType.equals("write") && !f.getAbsoluteFile().exists()) {
                           System.out.println("ERROR 1: File does not exist");
-                      } else if (!f.isFile()) {
+                      } else if (requestType.equals("write") && !f.isFile()) {
                           System.out.println("ERROR 2: Input is not a file");
                       } else {
                           System.out.println("Processsing the request. Please hold...");

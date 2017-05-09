@@ -38,7 +38,7 @@ public class IntermediateHost {
 			receivePacket = new DatagramPacket(data, data.length);
 
 		    try {
-		        System.out.println("Intermidiate Host: Waiting for Packet.\n");
+		        printer.printMessage("Intermidiate Host: Waiting for Packet.\n");
 		        // Block until a datagram is received via sendReceiveSocket.  
 		    	recieveSocket.receive(receivePacket);
 
