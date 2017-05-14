@@ -2,16 +2,16 @@ package iteration_1.server;
 import java.util.Scanner;
 import java.net.*;
 import iteration_1.*;
+
 public class Server {
     private Thread serverLogicThread;
     private DatagramSocket receiveSocket;
-    public static int CLIENT_SIDE_PORT = 69;
     public static Constants.runType runType;
 
     public Server() {
         try{
             
-            this.receiveSocket = new DatagramSocket(Server.CLIENT_SIDE_PORT);
+            this.receiveSocket = new DatagramSocket(Constants.SERVER_LISTENING_PORT);
             this.serverLogicThread = new ServerLogicThreadSpawn(this.receiveSocket);       
             this.serverLogicThread.start();
             
@@ -37,7 +37,7 @@ public class Server {
 	      Scanner scanner = new Scanner(System.in);
 	      String userInputRunType, input;
 	      System.out.println("Press \"q\" to quit the program");
-	      System.out.println("Enter run type: (quite/verbose)");
+	      System.out.println("Enter run type: (quiet/verbose)");
           while(true) {
     	      input = scanner.nextLine();
     	      
@@ -47,22 +47,22 @@ public class Server {
     	          String[] parameters = input.split(" ");
     	          if(parameters.length == 1){
         	          userInputRunType = parameters[0];        	    
-        	          if (!userInputRunType.toLowerCase().equals("quite") && !userInputRunType.toLowerCase().equals("verbose")) {
-                          System.out.println("Invalid Run Type. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
+        	          if (!userInputRunType.toLowerCase().equals("quiet") && !userInputRunType.toLowerCase().equals("verbose")) {
+                          System.out.println("Invalid Run Type. Please follow the following format.\nFormat: (write/read) (quiet/verbose) (normal/test) \"example.txt\"");
                       } else {                          
                           System.out.println("Starting the server in " + userInputRunType + " Mode...");
             	          break;
             	      }
     	          } else {
-    	              System.out.println("Unrecognized Run Type. Please Enter Run Type: (quite/verbose)");
+    	              System.out.println("Unrecognized Run Type. Please Enter Run Type: (quiet/verbose)");
     	          }
     	      }
 	      }
     
     	  if(userInputRunType != null){
     	      Constants.runType runType;
-    	      if(userInputRunType.equals("quite")){
-    	          runType = Constants.runType.QUITE;
+    	      if(userInputRunType.equals("quiet")){
+    	          runType = Constants.runType.QUIET;
     	      }else{
     	          runType = Constants.runType.VERBOSE;
     	      }

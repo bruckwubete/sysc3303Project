@@ -16,6 +16,10 @@ public class FileSender {
     private DatagramPacket sendPacket, receivePacket;
     private PrintService printer;
     
+    //private byte blockNumberByte1 = 0;
+    //private byte blockNumberByte2 = 0;
+    private int blockNumber = 0;
+    
     public FileSender(Constants.runType runType){
         this.printer = new PrintService(runType);
     }
@@ -37,31 +41,53 @@ public class FileSender {
          * around the FileOutputStream, which may increase the
          * efficiency of writing to the stream.
          */
-        BufferedOutputStream out =
-            new BufferedOutputStream(new FileOutputStream("out.dat"));
 
         byte[] data = new byte[512];
+        byte[] message = new byte[516];
 
         int n;
+        int prevn = 0;
 
         sendReceiveSocket = new DatagramSocket();
         
         /* Read the file in 512 byte chunks. */
-        while ((n = in.read(data)) != -1) {
+        while ((n = in.read(data)) != -1 || prevn==512) {
             /* 
              * We just read "n" bytes into array data. 
              * Now write them to the output file. 
              */
+            
+            /*blockNumberByte2++;
+            if(blockNumberByte2==0){
+                blockNumberByte1++;
+            }
+            */
+            
+            if(prevn==512&&n==-1){
+                data = new byte[0];
+                n = 0;
+            }
+
+            
+            prevn = n;
+            blockNumber ++;
+            
+
+            
+            System.arraycopy(Constants.DATA, 0, message, 0, 2);
+            message[2] = (byte)(blockNumber/256); //blockNumberByte1;
+            message[3] = (byte)(blockNumber%256); //blockNumberByte2;
+            System.arraycopy(data, 0, message, 4, n);
+            System.out.println("Test Length: " + message.length + ", " + n);
             if(n<512){
-                byte[] inputData = new byte[n];
-                System.arraycopy(data, 0, inputData, 0, n);
+                byte[] inputData = new byte[n+4];
+                System.arraycopy(message, 0, inputData, 0, n+4);
                 sendPacket = new DatagramPacket(inputData, inputData.length, destAddress, destPort);
             }
             else{
-                sendPacket = new DatagramPacket(data, data.length, destAddress, destPort);   
+                sendPacket = new DatagramPacket(message, message.length, destAddress, destPort);   
             }
-
-            out.write(data, 0, n);
+            System.out.println("Test Length 2: " + sendPacket.getLength());
   
             printer.printPacketInfo("FileSender", "Sending", sendPacket);
 
@@ -94,8 +120,8 @@ public class FileSender {
 	    		System.exit(1);
 	    	}
         }
+        
         in.close();
-        out.close();
     }
 
     private static boolean isAcknowledgeValid(DatagramPacket a){

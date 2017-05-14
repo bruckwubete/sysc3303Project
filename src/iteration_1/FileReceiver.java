@@ -2,6 +2,7 @@ package iteration_1;
 
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
 
 /**
  * FileReceiver.java - Demonstrates how to use Java's byte stream I/O
@@ -48,9 +49,11 @@ public class FileReceiver {
     	}
     }
     
-    public void receive(String filename, int destPort, InetAddress destAddress, byte[] ack) throws FileNotFoundException, IOException {
+    public void receive(String filename, int destPort, InetAddress destAddress) throws FileNotFoundException, IOException {
 
         FileOutputStream bufferedWriter = null;
+        
+        byte[] ack = new byte[4];
         
         try{
            
@@ -64,7 +67,7 @@ public class FileReceiver {
             bufferedWriter = new FileOutputStream(filename);
            
 
-            byte[] data = new byte[512];
+            byte[] data = new byte[516];
 
             do{ 
                 receivePacket = new DatagramPacket(data, data.length);
@@ -75,17 +78,17 @@ public class FileReceiver {
 
                 printer.printPacketInfo("FileReceiver", "Receive", receivePacket);
                 
-                bufferedWriter.write(receivePacket.getData(), 0, receivePacket.getLength());
-
-                //sendPacket = new DatagramPacket(ack, ack.length, destAddress, sendPort);
-
-                //printer.printPacketInfo("FileReceiver", "Send", sendPacket);
-
-                //sendReceiveSocket.send(sendPacket);
+                System.out.println("Test Length: " + receivePacket.getLength());
+                //bufferedWriter.write(Helper.dataExtractor(receivePacket), 0, receivePacket.getLength()-4);
+                bufferedWriter.write(Helper.dataExtractor(receivePacket));
+                //bufferedWriter.write(receivePacket.getData(), 0, receivePacket.getLength());
+                
+                System.arraycopy(Constants.ACK, 0, ack, 0, 2);
+                System.arraycopy(Arrays.copyOfRange(receivePacket.getData(), 2, 4), 0, ack, 2, 2);
                 
                 sendPacket(sendPort, destAddress, ack);
 
-            }while(receivePacket.getLength() == 512);
+            }while(receivePacket.getLength() == 516);
         }
         catch (UnknownHostException e) {
     		e.printStackTrace();

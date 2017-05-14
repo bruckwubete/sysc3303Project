@@ -21,4 +21,8 @@ public class Helper {
         return new String(Arrays.copyOfRange(packetData, 2, index));
 
      }
+     
+     public static byte[] dataExtractor(DatagramPacket dataPacket){
+         return Arrays.copyOfRange(dataPacket.getData(), 4, dataPacket.getLength());
+     }
 }

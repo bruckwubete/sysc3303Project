@@ -96,7 +96,7 @@ public class ServerLogicThreadSpawn extends Thread{
 			// 3rd element of array to second last element
 			if (dataByte[i] == (byte) 0) {
 				count++;
-			}	
+			}
 		}
 		if (count != 1) {
 			printer.printMessage("ERROR: No 0 byte or to many 0 bytes between strings. \nExiting...");

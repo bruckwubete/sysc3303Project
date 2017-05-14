@@ -4,10 +4,9 @@ import java.net.DatagramPacket;
 
 public class PrintService {
     private boolean isQuite;
-    public static enum Mode { QUITE, VERBOSE};
 	
 	public PrintService(Constants.runType runType){
-          this.isQuite = (runType == Constants.runType.QUITE) ? true: false;
+          this.isQuite = (runType == Constants.runType.QUIET) ? true: false;
 	}
 
 	public void printPacketInfo(String who, String sendRecieve, DatagramPacket sendReceivePacket){

@@ -6,15 +6,15 @@ import java.util.Scanner;
 import iteration_1.*;
 
 public class Client {
-	private DatagramPacket sendReceivePacket;
-	private DatagramSocket sendReceiveSocket;
-	private PrintService printer;
-	private String requestType, filename;
-	private Constants.runType runType;
-	private int sendPort;
-	private static final int INTERMEDIATE_HOST = 23;
-	private static final int SERVER = 69;
-
+    
+	   private DatagramPacket sendReceivePacket;
+	   private DatagramSocket sendReceiveSocket;
+	   private PrintService printer;
+	   private String requestType, filename;
+	   private Constants.runType runType;
+	   private int sendPort;
+	   private boolean testMode;
+	
 	   public Client(String requestType, String runType, String mode, String filename){
 	      try {
 	         // Construct a datagram socket and bind it to any available 
@@ -23,10 +23,11 @@ public class Client {
 	         this.requestType = requestType;
 	         this.filename = filename;
 	         sendReceiveSocket = new DatagramSocket();
-             sendPort = mode.equals("normal") ? SERVER: INTERMEDIATE_HOST;
+             sendPort = mode.equals("normal") ? Constants.SERVER_LISTENING_PORT: Constants.IH_LISTENING_PORT;
+             testMode = mode.equals("normal") ? false: true;
              
-             if(runType.equals("quite")){
-    	          this.runType = Constants.runType.QUITE;
+             if(runType.equals("quiet")){
+    	          this.runType = Constants.runType.QUIET;
     	      }else{
     	          this.runType = Constants.runType.VERBOSE;
     	      }
@@ -70,7 +71,7 @@ public class Client {
 	              FileReceiver receiver = new FileReceiver(runType);
 	              receiver.sendPacket(sendPort, InetAddress.getLocalHost(), stream.toByteArray());
                   printer.printMessage("Client: Packet sent.\n");	                                   
-	              receiver.receive(filename, sendPort,  InetAddress.getLocalHost(), Constants.ACK);
+	              receiver.receive(filename, sendPort,  InetAddress.getLocalHost());
 	    	  }else{
 	    	      sendReceivePacket = new DatagramPacket(stream.toByteArray(), stream.toByteArray().length, InetAddress.getLocalHost(), sendPort);
 	    	      	    	  
@@ -88,7 +89,11 @@ public class Client {
      	          sendReceiveSocket.receive(sendReceivePacket);     	    
      	          // Process the received datagram.
      	          printer.printPacketInfo("Client", "Recieved", sendReceivePacket);
-     	          sendPort = sendReceivePacket.getPort();
+     	          
+     	          if(!testMode){
+     	              sendPort = sendReceivePacket.getPort();
+ 	              }
+
      	          
      	          FileSender sender = new FileSender(runType);
      	          sender.send(filename, sendPort, sendReceivePacket.getAddress());
@@ -98,148 +103,18 @@ public class Client {
 	          e.printStackTrace();
     		  System.exit(1);
 	      }
-//
-//	      
-//	      while(count!=11){
-//	    	  try{
-//	              //Construct message
-//	    		  if(count == 10){
-//	    			  System.out.println("Sending corrupted packet to server");
-//	    			  stream.write(invalid_sequence);  
-//	    		  }else if(count%2 == 0){//alternate between read and write
-//		    		  stream.write(read_sequence);			 
-//		    	  }else{
-//		    		  stream.write(write_sequence);
-//		    	  }
-//		    	  stream.write(msg);
-//		    	  stream.write(0);
-//		    	  stream.write(mode.getBytes());
-//		    	  stream.write(0);
-//		    	  
-//		    	  //Create Packet
-//		    	  if(mode.equals("test")){
-//		    	      sendReceivePacket = new DatagramPacket(stream.toByteArray(), stream.toByteArray().length,
-//		 	                                         InetAddress.getLocalHost(), INTERMEDIATE_HOST);
-//		    	  } else {
-//		    	      sendReceivePacket = new DatagramPacket(stream.toByteArray(), stream.toByteArray().length,
-//		 	                                         InetAddress.getLocalHost(), SERVER);
-//	 	          }
-//
-//		 	      
-//		    	  //Print Packet
-//		    	  printer.printPacketInfo("Client", "Sending", sendReceivePacket);
-//			      
-//	
-//			      // Send the datagram packet to the server via the send/receive socket. 
-//	               sendReceiveSocket.send(sendReceivePacket);
-//	               System.out.println("Client: Packet sent.\n");
-//	               
-//	               
-//	               System.out.println("\nWaiting for packet \n");	               
-//	               sendReceivePacket = new DatagramPacket(data, data.length);           	
-//	     	      // Block until a datagram is received via sendReceiveSocket.  
-//	     	      sendReceiveSocket.receive(sendReceivePacket);     	    
-//	     	      // Process the received datagram.
-//	     	      printer.printPacketInfo("Client", "Recieved", sendReceivePacket);
-//			      
-//	     	      //Prepare for next loop
-//		       	  count++;
-//		       	  stream = new ByteArrayOutputStream();
-//	    	  }catch(Exception e){
-//	    		  e.printStackTrace();
-//	    		  System.exit(1);
-//	    	  }
-//	      }
 
 	      // We're finished, so close the socket.
 	      sendReceiveSocket.close();
 	   }
 
 	   public static void main(String args[]){
-//	      Scanner s = new Scanner(System.in);
-//	      System.out.println("Press \"q\" to quit the program");
-//	      System.out.println("Enter a request: (write/read)");
-//	      String inputRequest, inputRunType, inputMode, inputFilename;
-//	      while(true) {
-//    	      inputRequest = s.nextLine();
-//                
-//              if(inputRequest.toLowerCase().equals("q"))  {
-//                  System.exit(1);
-//              }
-//    	      if (!inputRequest.toLowerCase().equals("write") && !inputRequest.toLowerCase().equals("read")) {
-//    	          System.out.println("Invalid Request. Please use the following format: (write/read)");
-//    	      } else {
-//    	          break;
-//    	      }
-//	      }
-//	      
-//          System.out.println("Enter a run type: (quite/verbose)");
-//          while(true){
-//              inputRunType = s.nextLine();
-//                
-//              if(inputRunType.toLowerCase().equals("q"))  {
-//                  System.exit(1);
-//              }
-//              if (!inputRunType.toLowerCase().equals("quite") && !inputRunType.toLowerCase().equals("verbose")) {
-//                  System.out.println("Invalid Request. Please use the following format: (quite/verbose)");
-//              } else {
-//                  break;
-//              }
-//          }
-//
-//          System.out.println("Enter a run mode: (normal/test)");
-//          while(true){
-//              inputMode =s.nextLine();
-//                
-//              if(inputMode.toLowerCase().equals("q"))  {
-//                  System.exit(1);
-//              }
-//              if (!inputMode.toLowerCase().equals("normal") && !inputMode.toLowerCase().equals("test")) {
-//                  System.out.println("Invalid Request. Please use the following format: (normal/test)");
-//              } else {
-//                  break;
-//              }
-//          }
-//
-//          System.out.println("Enter the file name:");
-//          while(true){
-//              inputFilename = s.nextLine();
-//              
-//              if(inputFilename.toLowerCase().equals("q")) {
-//                  System.exit(1);
-//              }
-//              File f = new File(inputFilename);
-//              if(f.exists() && f.isFile()){
-//                  System.out.println("Hassaan is currently sending the request. Please hold...");
-//                  break;
-//              } else {
-//                  System.out.println("Invalid Request: Please enter a file name");
-//              }
-//          }
-//	      s.close();
 
-/* QUICK test for server
-   try {
-    byte[] test= {};
-     DatagramPacket sendReceivePacket1 = new DatagramPacket(test, test.length,
-		 	                                         InetAddress.getLocalHost(), 69);	 	     
-		 	      
-	         // Construct a datagram socket and bind it to any available 
-	         // port on the local host machine. This socket will be used to
-	         // send and receive UDP Datagram packets.
-	     DatagramSocket    sendReceiveSocket1 = new DatagramSocket();
-	     sendReceiveSocket1.send(sendReceivePacket1);
-	     
-	      } catch (Exception se) {   // Can't create the socket.
-	         se.printStackTrace();
-	         System.exit(1);
-	      }
-*/
-	      /************************************************************/
 	      Scanner scanner = new Scanner(System.in);
 	      String input, requestType, runType, mode, filename;
 	      System.out.println("Press \"q\" to quit the program");
-	      System.out.println("Enter a request: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
+	      System.out.println("Enter a request: (write/read) (quiet/verbose) (normal/test) \"filename\"");
+	      System.out.println("OR: (write/read) \"filename\" [default: quiet normal]");
           while(true) {
     	      input = scanner.nextLine();
     	      
@@ -259,11 +134,11 @@ public class Client {
         	          
         	          File f = new File(filename);
         	          if (!requestType.toLowerCase().equals("write") && !requestType.toLowerCase().equals("read")) {
-            	          System.out.println("Invalid Request Type. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
+            	          System.out.println("Invalid Request Type. Please use one of the following formats:");
             	      } else if (!runType.toLowerCase().equals("quite") && !runType.toLowerCase().equals("verbose")) {
-                          System.out.println("Invalid Run Type. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
+                          System.out.println("Invalid Run Type. Please use one of the following formats:");
                       } else if (!mode.toLowerCase().equals("normal") && !mode.toLowerCase().equals("test")) {
-                          System.out.println("Invalid Mode Specification. Please follow the following format.\nFormat: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
+                          System.out.println("Invalid Mode Specification. Please use one of the following formats:");
                       } else if (requestType.equals("write") && !f.getAbsoluteFile().exists()) {
                           System.out.println("ERROR 1: File does not exist");
                       } else if (requestType.equals("write") && !f.isFile()) {
@@ -272,9 +147,34 @@ public class Client {
                           System.out.println("Processsing the request. Please hold...");
             	          break;
             	      }
-            	      System.out.println("Format: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
+            	      System.out.println("(write/read) (quite/verbose) (normal/test) \"example.txt\"");
+            	      System.out.println("(write/read) \"filename\" [default: quiet normal]");
+    	          } else if (parameters.length == 2){
+    	              requestType = parameters[0];
+    	              runType = "quiet";
+    	              mode = "normal";
+    	              filename = parameters[1];
+    	              
+    	              if(requestType.equals("write")){
+        	              filename = System.getProperty("user.dir").toString() + Constants.clientPath + parameters[1];
+        	          }
+    	              
+    	              File f = new File(filename);
+    	              
+    	              if (!requestType.toLowerCase().equals("write") && !requestType.toLowerCase().equals("read")) {
+    	                  System.out.println("Invalid Request Type. Please follow one of the following formats:");
+    	              } else if (requestType.equals("write") && !f.getAbsoluteFile().exists()) {
+                          System.out.println("ERROR 1: File does not exist");
+                      } else if (requestType.equals("write") && !f.isFile()) {
+                          System.out.println("ERROR 2: Input is not a file");
+                      } else {
+                          System.out.println("Processing the request. Please hold...");
+                          break;
+                      }
+                      System.out.println("(write/read) (quite/verbose) (normal/test) \"example.txt\"");
+            	      System.out.println("(write/read) \"filename\" [default: quiet normal]");
     	          } else {
-    	              System.out.println("Please follow the format: (write/read) (quite/verbose) (normal/test) \"example.txt\"");
+    	              System.out.println("Invalid. Please use one of the specified formats.");
     	          }
     	      }
 	      }
@@ -282,6 +182,7 @@ public class Client {
     	  if(requestType != null && runType != null && mode != null && filename != null){
 	          Client c = new Client(requestType, runType, mode, filename);
 	          c.sendAndReceive();
+	          System.out.println("Successfully finished a " + requestType + " transaction!");
           }
 	   }
 }
