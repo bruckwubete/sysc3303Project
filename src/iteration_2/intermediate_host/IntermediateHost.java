@@ -3,6 +3,8 @@ package iteration_2.intermediate_host;
 import java.io.*;
 import java.net.*;
 import iteration_2.*;
+
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class IntermediateHost {
@@ -29,8 +31,9 @@ public class IntermediateHost {
 			recieveSocket = new DatagramSocket(Constants.IH_LISTENING_PORT);			 
 			sendrecieveSocket = new DatagramSocket();
             sendPort = Constants.SERVER_LISTENING_PORT;
+            sendSocket = new DatagramSocket();
             simulationOption = optionSelected;
-			//instansiate printer service instance
+			//instantiate printer service instance
 			printer = new PrintService(IntermediateHost.runType);
 
 	    } catch (SocketException se) {   // Can't create the socket.
@@ -47,71 +50,124 @@ public class IntermediateHost {
 
 		    try {
 		        printer.printMessage("Intermidiate Host: Waiting for Packet.\n");
-		        // Block until a datagram is received via sendReceiveSocket.  
+		        // Block until a datagram is received via sendReceiveSocket. 
 		    	recieveSocket.receive(receivePacket);
 
 		    	// Process the received datagram.
 		    	printer.printPacketInfo("IntermediateHost", "Recieved", receivePacket);
 
+		    	if(Helper.validReadWriteRequest(receivePacket)){
+		    		sendPort = Constants.SERVER_LISTENING_PORT;
+		    	}
+		    	
 		   	    //save the port packet was received from
 		    	clientPort = receivePacket.getPort();
 		    	sendPacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(), InetAddress.getLocalHost(), sendPort);		      
-                
-			    //Print out new packet info
-			    printer.printPacketInfo("IntermediateHost", "Sending", sendPacket);		      
+      
 
                 /******************************************************************/
-                if(Helper.isAckOpCodeValid(sendPacket)){
+		    	if((Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516)){
+				    System.out.println("Successfully finished a read/write transaction");
+	            }
+		    	
+		    	
+		    	
+		    	if(Helper.isAckOpCodeValid(sendPacket)){
 				    ackCounter++;
 				}
 
+				/*
 				if(simulationOption == OPTION_INVALID_TRANSFER_ID && ((Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516) || (ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket)))){
 				    simulateError5(sendPacket);
-	            } else if (simulationOption != OPTION_NORMAL_OPERATION) {
+	            } else if (simulationOption != OPTION_NORMAL_OPERATION && simulationOption != OPTION_INVALID_TRANSFER_ID) {
 	               if(Helper.validReadWriteRequest(sendPacket)){
-	                    simulateError4(sendPacket, simulationOption);                    
+	                    simulateError4(sendPacket, simulationOption, clientPort);                    
 	                }else if(ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket) || (Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516)){
-	                    simulateError4(sendPacket, simulationOption);   	                    
+	                    simulateError4(sendPacket, simulationOption, clientPort);   	                    
 	                }
 	            }
-	            /*******************************************************************/
-
-		        // Block until a datagram is received via sendReceiveSocket.  
-		    	sendrecieveSocket.send(sendPacket); 
-		    	sendrecieveSocket.receive(receivePacket); 
-                sendPort = receivePacket.getPort();
-
-			    // Process the received datagram and send to client.
-			    printer.printPacketInfo("IntermediateHost", "Recieved", receivePacket);		
-			    sendSocket = new DatagramSocket();
-				sendPacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(), InetAddress.getLocalHost(), clientPort);
-
+	            */
+		    	
+	            if (simulationOption != OPTION_NORMAL_OPERATION && simulationOption != OPTION_INVALID_TRANSFER_ID) {
+	               if(Helper.validReadWriteRequest(sendPacket)){
+	                    simulateError4(sendPacket, simulationOption, clientPort);                    
+	                }else if(ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket) || (Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516)){
+	                    simulateError4(sendPacket, simulationOption, clientPort);   	                    
+	                }
+		    	} else {
+		    		if(simulationOption == OPTION_INVALID_TRANSFER_ID && ((Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516) || (ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket)))){
+		    			simulateError5(sendPacket);
+		    		}
+			    	
+		            /*******************************************************************/
+	
+					
+			    	
+					//Print out new packet info
+				    printer.printPacketInfo("IntermediateHost", "Sending", sendPacket);	
+					
+			        // Block until a datagram is received via sendReceiveSocket.  
+			    	sendrecieveSocket.send(sendPacket);
+			    	sendrecieveSocket.setSoTimeout(5000);
+			    	sendrecieveSocket.receive(receivePacket); 
+	                sendPort = receivePacket.getPort();
+	
+				    // Process the received datagram and send to client.
+				    printer.printPacketInfo("IntermediateHost", "Recieved", receivePacket);		
+				    
+					sendPacket = new DatagramPacket(receivePacket.getData(), receivePacket.getLength(), InetAddress.getLocalHost(), clientPort);
+	
+					
+	
+					/******************************************************************/
+	                if(Helper.isAckOpCodeValid(sendPacket)){
+					    ackCounter++;
+					}
+					
+	                /*
+					if(simulationOption == OPTION_INVALID_TRANSFER_ID && ((Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516) || (ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket)))){
+					    simulateError5(sendPacket);
+		            } else if (simulationOption != OPTION_NORMAL_OPERATION && simulationOption != OPTION_INVALID_TRANSFER_ID){
+		                if(Helper.validReadWriteRequest(sendPacket)){
+		                    simulateError4(sendPacket, simulationOption, sendPort);                    
+		                }else if(ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket) || (Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516)){
+		                    simulateError4(sendPacket, simulationOption, sendPort);   	                    
+		                }
+		                simulationOption = OPTION_NORMAL_OPERATION;
+		            }
+		            */
+	                
+					
+		            if (simulationOption != OPTION_NORMAL_OPERATION && simulationOption != OPTION_INVALID_TRANSFER_ID){
+		                if(Helper.validReadWriteRequest(sendPacket)){
+		                    simulateError4(sendPacket, simulationOption, sendPort);                    
+		                }else if(ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket) || (Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516)){
+		                    simulateError4(sendPacket, simulationOption, sendPort);   	                    
+		                }
+		                simulationOption = OPTION_NORMAL_OPERATION;}
+		            else{
+		            	if(simulationOption == OPTION_INVALID_TRANSFER_ID && ((Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516) || (ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket)))){
+		            		simulateError5(sendPacket);
+		            	}
+					
+					/*******************************************************************/
+					
+			    	if((Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516)){
+					    System.out.println("Successfully finished a read/write transaction");
+		            }
+		    	
+		            }
+		    	}					
 				printer.printPacketInfo("IntermediateHost", "Sending", sendPacket);
-
-				/******************************************************************/
-                if(Helper.isAckOpCodeValid(sendPacket)){
-				    ackCounter++;
-				}
-				
-				if(simulationOption == OPTION_INVALID_TRANSFER_ID && ((Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516) || (ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket)))){
-				    simulateError5(sendPacket);
-	            } else if (simulationOption != OPTION_NORMAL_OPERATION){
-	                if(Helper.validReadWriteRequest(sendPacket)){
-	                    simulateError4(sendPacket, simulationOption);                    
-	                }else if(ackCounter == 2 && Helper.isAckOpCodeValid(sendPacket) || (Helper.isDataOpCodeValid(sendPacket) && sendPacket.getLength() < 516)){
-	                    simulateError4(sendPacket, simulationOption);   	                    
-	                }
-	                simulationOption = OPTION_NORMAL_OPERATION;
-	            }
-	            /*******************************************************************/
-
 				sendSocket.send(sendPacket);
+			    	
 
-				//close the socket
-				sendSocket.close();
-				System.out.println("Successfully finished a write read transaction");
 
+
+		    } catch (SocketTimeoutException e) {
+		    	continue;
 		    } catch (IOException e) {
+		    	
 				e.printStackTrace();
 				System.exit(1);
 		    }
@@ -119,7 +175,7 @@ public class IntermediateHost {
 	}
 
     public void simulateError5(DatagramPacket sendPacket) {
-        printer.printMessage("Simulating ERROR 5...");
+        System.out.println("Simulating ERROR 5 option: "+  simulationOption + " ...");
 
         try {
             DatagramSocket newSocket = new DatagramSocket();
@@ -134,6 +190,7 @@ public class IntermediateHost {
            
             if(Helper.isErrorFiveResponseValid(receivePacket)){
                 printer.printMessage("Received Error Packet: Invalid Transfer ID");
+                printer.printMessage("");
             }
 
             newSocket.close();
@@ -142,9 +199,12 @@ public class IntermediateHost {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        
+        System.out.println("ERROR 5 simulation ran successfully.");
     }
 
-    public void simulateError4(DatagramPacket sendPacket, int errorOption) {
+    public void simulateError4(DatagramPacket sendPacket, int errorOption, int destPort) {
+    	System.out.println("Simulating ERROR 4 option: " +  simulationOption + " ...");
       
         if (errorOption == OPTION_INVALID_OP_CODE){    
             byte[] dataBytes = sendPacket.getData();
@@ -152,20 +212,30 @@ public class IntermediateHost {
             dataBytes[1] = 9;
             sendPacket.setData(dataBytes);
         } else if (errorOption == OPTION_INVALID_MODE && Helper.validReadWriteRequest(sendPacket)){
-            byte[] dataBytes = Helper.makeModeInvalid(sendPacket.getData());
+            byte[] dataBytes = Helper.makeModeInvalid(Arrays.copyOf(sendPacket.getData(), sendPacket.getLength()));
             sendPacket.setData(dataBytes);
         } else if (errorOption == OPTION_INVALID_PACKET_FORMATTING && Helper.validReadWriteRequest(sendPacket)){
             byte[] dataBytes = sendPacket.getData();
-            dataBytes[dataBytes.length - 1] = 3;
-            sendPacket.setData(dataBytes);
+            dataBytes[sendPacket.getLength() - 1] = 3;
+            sendPacket.setData(Arrays.copyOf(dataBytes, sendPacket.getLength()));
         }
         try {
             printer.printMessage("Sending invalid packet to server...");
+            printer.printPacketInfo("Intermediate Host", "Sending", sendPacket);
             sendrecieveSocket.send(sendPacket);
-            sendrecieveSocket.receive(sendPacket);   
             
-            if(Helper.isErrorFourResponseValid(sendPacket)){
+            byte errorData[] = new byte[516];
+            DatagramPacket errorPacket = new DatagramPacket(errorData, errorData.length);
+            sendrecieveSocket.receive(errorPacket);   
+            
+            if(Helper.isErrorFourResponseValid(errorPacket)){
+            	sendPacket.setData(Arrays.copyOf(errorPacket.getData(), errorPacket.getLength()));
+            	sendPacket.setPort(destPort);
                 printer.printMessage("Received Error Packet: Error Code 4");
+                printer.printPacketInfo("Intermediate Host", "Received", errorPacket);
+            }else{
+            	System.out.println("ERROR: simulate Error 4 not handled properly");
+            	System.exit(1);
             }
 
         } catch (SocketException se) {
@@ -173,6 +243,8 @@ public class IntermediateHost {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        
+        System.out.println("ERROR 4 simulation ran successfully.");
     }
 
     private static void printMenu() {
@@ -216,7 +288,7 @@ public class IntermediateHost {
       	            } else if (optionSelected < 0 || optionSelected > 4) {
       	                System.out.println("Error " + parameters[1] + " is not a valid error type. Please enter a number between 0..4, or nothing for no error simulation");
       	            } else {
-      	                System.out.println("Starting the intermediate host in " + userInputRunType + " Mode with option" + optionSelected);
+      	                System.out.println("Starting the intermediate host in " + userInputRunType + " Mode with option " + optionSelected);
       	                break;
       	            }
     	        } else {

@@ -26,8 +26,8 @@ public class WriteThreadSpawn extends Thread{
           System.out.println("Successfully finished a write transaction");
        
     	}catch(Exception e){
-    	    e.printStackTrace();
-    	    System.exit(1);
+    		System.err.println(e.getMessage());
+    		System.exit(1);
         }   
     }
 

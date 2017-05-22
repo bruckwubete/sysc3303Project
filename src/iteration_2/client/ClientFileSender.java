@@ -15,7 +15,7 @@ public class ClientFileSender extends iteration_2.FileSender {
         }
     
     
-        public void send(String filename, int destPort, InetAddress destAddress) throws FileNotFoundException, IOException, Exception {
+        public void send(String filename, int destPort, InetAddress destAddress) throws Exception {
         /*
          * A FileInputStream object is created to read the file
          * as a byte stream. A BufferedInputStream object is wrapped
@@ -82,8 +82,8 @@ public class ClientFileSender extends iteration_2.FileSender {
 	    		sendReceiveSocket.send(sendPacket);
 	    	}
 	    	catch (IOException e){
-	    		e.printStackTrace();
-	    		System.exit(1);
+	    		in.close();
+	    		throw new Exception(e.getMessage());	    		
 	    	}
 
 	    	byte[] msg = new byte[100];
@@ -91,23 +91,24 @@ public class ClientFileSender extends iteration_2.FileSender {
 	    	receivePacket = new DatagramPacket(msg, msg.length);
 	    	
 	    	try{
-	    		sendReceiveSocket.receive(receivePacket);
-	    		printer.printPacketInfo("FileSender", "Receive", receivePacket);
-	    		
-	    		
 	    		while(true){
+	    			sendReceiveSocket.receive(receivePacket);
+		    		printer.printPacketInfo("FileSender", "Receive", receivePacket);
+	    			
 	    		    if(expectedPort != receivePacket.getPort()){
-                        System.out.println("Encountered an error packet: UNKNOWN TRANSER ID");
+	    		    	System.out.println("Encountered an error packet: UNKNOWN TRANSER ID");
                         byte[] errorCode = Helper.formErrorPacket(Constants.UNKNOWN_TRANSFER_ID, "Packet received from invalid port");
                         DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
                         sendReceiveSocket.send(invalidOpcode);
-                        System.out.println("Sending Error Code");
+                        printer.printMessage("Sending Error Code");
     	    		}
     	    		else if (Helper.isErrorFourResponseValid(receivePacket)){
-    	    		    System.out.println("Error Packet Received: Illegal TFTP operation");
-                        System.exit(1);
+    	    			System.out.println("Error Packet Received: Illegal TFTP operation");
+    	    		    in.close();
+    	    		    return;
     	    		}
     	    		else if (!Helper.isAckOpCodeValid(receivePacket)){
+    	    			System.out.println("Error Ack Packet Received");
     	    		    byte[] errorCode = Helper.formErrorPacket(Constants.ILLEGAL_TFTP_OPERATION, "Ack Op Code not valid");
     	    		    DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
     	    		    sendReceiveSocket.send(invalidOpcode);
@@ -127,10 +128,12 @@ public class ClientFileSender extends iteration_2.FileSender {
 
 	    	}
 	    	catch (IOException e){
-	    		e.printStackTrace();
-	    		System.exit(1);
+	    		in.close();
+	    		throw new Exception(e.getMessage());	    
 	    	}
         }
+        
+        printer.printMessage("Successfully finished a write transaction! \n\n");
         
         in.close();
     }

@@ -29,7 +29,7 @@ public class ServerFileReceiver extends iteration_2.FileReceiver {
            
             File f = new File(filename);
             if(f.exists() && !f.isDirectory()) {
-                String[] filePathArray = filename.split("/");                
+                String[] filePathArray = filename.split("\\\\");                
                 filePathArray[filePathArray.length - 1] = "Copy" + filePathArray[filePathArray.length - 1];
                 filename = String.join("/", filePathArray);                
             }
@@ -39,7 +39,10 @@ public class ServerFileReceiver extends iteration_2.FileReceiver {
 
             byte[] data = new byte[516];
 
+            boolean errorEncountered = false;
+            
             do{ 
+            	errorEncountered = false;
                 receivePacket = new DatagramPacket(data, data.length);
                 printer.printMessage("Receiving on: " + sendReceiveSocket.getLocalPort());
                 sendReceiveSocket.receive(receivePacket);
@@ -48,17 +51,11 @@ public class ServerFileReceiver extends iteration_2.FileReceiver {
                 }
                 
                 
-/*                count++;
-                if(!Helper.isDataOpCodeValid(receivePacket) && count  == 1){
-                    sendPort = receivePacket.getPort();
-                }
-*/
                 printer.printPacketInfo("FileReceiver", "Receive", receivePacket);
                 
-//                if (sendPort != receivePacket.getPort()){
-    
-                System.out.println("Ports: " + destPort + ", " + receivePacket.getPort());
+
                 if(destPort != receivePacket.getPort()){
+                	errorEncountered = true;
                     System.out.println("Encountered an error packet: UNKNOWN TRANSER ID");
                     byte[] errorCode = Helper.formErrorPacket(Constants.UNKNOWN_TRANSFER_ID, "Packet received from invalid port");
                     DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
@@ -90,19 +87,18 @@ public class ServerFileReceiver extends iteration_2.FileReceiver {
                         
                         System.arraycopy(Constants.ACK, 0, ack, 0, 2);
                         System.arraycopy(Arrays.copyOfRange(receivePacket.getData(), 2, 4), 0, ack, 2, 2);
-                        
-    //                    sendPacket(sendPort, destAddress, ack);
+
                         sendPacket(destPort, destAddress, ack);
                     }
                 }
-            }while(receivePacket.getLength() == 516);
+            }while(receivePacket.getLength() == 516 || errorEncountered);
         }
         catch (UnknownHostException e) {
-    		e.printStackTrace();
-    		System.exit(1);
+        	System.err.println(e.getMessage());    
+        	System.exit(1);
         }
     	catch (IOException e){
-    		e.printStackTrace();
+    		System.err.println(e.getMessage());
     		System.exit(1);
     	}
         finally{
@@ -112,7 +108,7 @@ public class ServerFileReceiver extends iteration_2.FileReceiver {
                 }            
             }
             catch (IOException e){
-                e.printStackTrace();
+            	System.err.println(e.getMessage());
                 System.exit(1);
             }
         }        

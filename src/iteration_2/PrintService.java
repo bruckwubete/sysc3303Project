@@ -26,9 +26,14 @@ public class PrintService {
     		System.out.print("Containing: \n");
     		System.out.print("String: " + new String(data,0,len)); // or could print "s"
     		System.out.println("\nBytes ");
+    		System.out.print("[");
     		for(int index=0; index < sendReceivePacket.getLength(); index++){
-    			System.out.println("Byte "+ index+ ":  " + data[index]);
+    				System.out.print(data[index]);
+    			if(index != sendReceivePacket.getLength() - 1){
+    				System.out.print(", ");
+    			}
     		}
+    		System.out.print("]");
     		System.out.println("\n");		
 	    }
 	}

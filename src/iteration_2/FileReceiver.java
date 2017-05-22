@@ -19,7 +19,7 @@ public abstract class FileReceiver {
     public int sendPort;
     
     
-    public void sendPacket(int port, InetAddress destAddress, byte[] ack) throws FileNotFoundException, IOException {
+    public void sendPacket(int port, InetAddress destAddress, byte[] ack) throws Exception {
         try{
 
             sendPacket = new DatagramPacket(ack, ack.length, destAddress, port);
@@ -38,5 +38,5 @@ public abstract class FileReceiver {
     	}
     }
     
-    abstract public void  receive(String filename, int destPort, InetAddress destAddress) throws FileNotFoundException, IOException, Exception;
+    abstract public void  receive(String filename, int destPort, InetAddress destAddress) throws Exception;
 }

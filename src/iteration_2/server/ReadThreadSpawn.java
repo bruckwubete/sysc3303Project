@@ -20,11 +20,11 @@ public class ReadThreadSpawn extends Thread {
 	        this.fileSender = new ServerFileSender(this.runType);         
 	        this.filename = System.getProperty("user.dir").toString() + Constants.serverPath + Helper.getFilename(readRequestPacket);
             this.fileSender.send(this.filename, readRequestPacket.getPort(), readRequestPacket.getAddress());
-            System.out.println("Successfully finished a send transaction");
+            System.out.println("Successfully finished a read transaction");
 
 		}catch(Exception e){
-		    e.printStackTrace();
-		    System.exit(1);
+			System.err.println(e.getMessage());
+    		System.exit(1);
 	    }   
     }
 

@@ -2,6 +2,8 @@ package iteration_2.client;
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 import iteration_2.client.Client;
@@ -20,11 +22,11 @@ public class ClientFileReceiver extends iteration_2.FileReceiver{
                 sendReceiveSocket = new DatagramSocket();
             } catch(Exception e){
                 e.printStackTrace();
-                System.exit(1);
+                return;
             }
     }
 
-    public void receive(String filename, int destPort, InetAddress destAddress) throws FileNotFoundException, IOException {
+    public void receive(String filename, int destPort, InetAddress destAddress) throws Exception {
 
         FileOutputStream bufferedWriter = null;
         
@@ -34,7 +36,7 @@ public class ClientFileReceiver extends iteration_2.FileReceiver{
            
             File f = new File(filename);
             if(f.exists() && !f.isDirectory()) {
-                String[] filePathArray = filename.split("/");                
+                String[] filePathArray = filename.split("\\\\");                
                 filePathArray[filePathArray.length - 1] = "Copy" + filePathArray[filePathArray.length - 1];
                 filename = String.join("/", filePathArray);                
             }
@@ -43,7 +45,10 @@ public class ClientFileReceiver extends iteration_2.FileReceiver{
 
             byte[] data = new byte[516];
 
+            boolean errorEncountered = false;
+            
             do{ 
+            	errorEncountered = false;
                 receivePacket = new DatagramPacket(data, data.length);
                 printer.printMessage("Receiving on: " + sendReceiveSocket.getLocalPort());
                 sendReceiveSocket.receive(receivePacket);
@@ -60,27 +65,33 @@ public class ClientFileReceiver extends iteration_2.FileReceiver{
                 } 
                 
                 if (expectedReceivePort != receivePacket.getPort()){
-                    System.out.println("Encountered an error packet: UNKNOWN TRANSER ID");
+                	errorEncountered = true;
+                    printer.printMessage("Encountered an error packet: UNKNOWN TRANSER ID");
                     byte[] errorCode = Helper.formErrorPacket(Constants.UNKNOWN_TRANSFER_ID, "Packet received from invalid port");
                     DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
+                    printer.printPacketInfo("FileReceiver", "Sending", invalidOpcode);
                     sendReceiveSocket.send(invalidOpcode);
-                    System.out.println("Sending Error Code");
+                    printer.printMessage("Sending Error Code \n");
                     
                 }else{
     	    		if (Helper.isErrorFourResponseValid(receivePacket)){
-    	    		    System.out.println("Error Packet Received: Illegal TFTP operation");
-    	    		    File file = new File(filename);
-                        file.delete();
-                        System.exit(1);
+    	    			System.out.println("Error Packet Received: Illegal TFTP operation");
+    	    		    bufferedWriter.close();
+    	    		    f = new File(filename);
+    	    		    Files.delete(Paths.get(f.getAbsolutePath()));
+    	    		    return;
     	    		}
                     else if(!Helper.isDataOpCodeValid(receivePacket)){
+                    	System.out.println("Error Ack Packet Received");
                         byte[] errorCode = Helper.formErrorPacket(Constants.ILLEGAL_TFTP_OPERATION, "Invalid Ack");
                         DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
                         sendReceiveSocket.send(invalidOpcode);
-                        System.out.println("Sending Error Code");
-                        File file = new File(filename);
-                        file.delete();
-                        System.exit(1);
+                        printer.printMessage("Sending Error Code");
+                        printer.printPacketInfo("FileReceiver", "Sending", receivePacket);
+                        bufferedWriter.close();
+                        f = new File(filename);
+                        Files.delete(Paths.get(f.getAbsolutePath()));
+    	    		    return;
                     }
                     else{
                         bufferedWriter.write(Helper.dataExtractor(receivePacket));         
@@ -90,18 +101,18 @@ public class ClientFileReceiver extends iteration_2.FileReceiver{
                         
                     }
                     
-                    printer.printPacketInfo("FileReceiver", "Sending", receivePacket);
+                   
                 }
 
-            }while(receivePacket.getLength() == 516);
+            }while(receivePacket.getLength() == 516 || errorEncountered);
+            
+            printer.printMessage("Successfully finished a read transaction! \n\n");
             
         }catch (UnknownHostException e) {
-    		e.printStackTrace();
-    		System.exit(1);
+        	throw new Exception(e.getMessage());
         }
     	catch (IOException e){
-    		e.printStackTrace();
-    		System.exit(1);
+    		throw new Exception(e.getMessage());
     	}finally{
             try{
                 if(bufferedWriter!=null){
@@ -109,8 +120,7 @@ public class ClientFileReceiver extends iteration_2.FileReceiver{
                 }            
             }
             catch (IOException e){
-                e.printStackTrace();
-                System.exit(1);
+            	throw new Exception(e.getMessage());
             }
         }        
     }

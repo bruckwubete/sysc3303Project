@@ -25,7 +25,7 @@ public class ServerLogicThreadSpawn extends Thread{
     }
 
     public void run(){
-        while(!Thread.interrupted()){
+        while(!this.isInterrupted()){
 		    try{
 			
                 // Construct a DatagramPacket for receiving packets up 
@@ -45,15 +45,17 @@ public class ServerLogicThreadSpawn extends Thread{
 	            
 	            
 	            if(!Helper.validReadWriteRequest(receivePacket)){
-	                System.out.println("Invalid Read/Write Request Received");
+	                printer.printMessage("Invalid Read/Write Request Received");
 	                byte[] errorCode = Helper.formErrorPacket(Constants.ILLEGAL_TFTP_OPERATION, "Invalid Request Format");
 	                DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());                    
                     DatagramSocket errorSocket = new DatagramSocket();
+                    printer.printPacketInfo("Server", "Sending", invalidOpcode);
                     errorSocket.send(invalidOpcode);
                     errorSocket.close();
 	            }
 	            
 	            else if(!Helper.isModeValid(receivePacket)){
+	            	printer.printMessage("Received Invalid Mode in Request");
 	                byte[] errorCode = Helper.formErrorPacket(Constants.ILLEGAL_TFTP_OPERATION, "Invalid Mode in Request");
 	                DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());                    
                     DatagramSocket errorSocket = new DatagramSocket();
@@ -82,7 +84,7 @@ public class ServerLogicThreadSpawn extends Thread{
             }catch(SocketException e){
 			    System.out.println("Quiting...");
 			}catch(Exception e){			      
-			    e.printStackTrace();
+			    System.err.println(e.getMessage());
 			    System.exit(1);
 		    }
 	    }	       

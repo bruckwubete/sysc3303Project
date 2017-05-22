@@ -15,6 +15,6 @@ public class Constants {
     public static final byte[] ILLEGAL_TFTP_OPERATION = {0, 4};
     public static final byte[] UNKNOWN_TRANSFER_ID = {0, 5};
     public static String currentIteration = "iteration_2";
-    public static String clientPath = "/" + Constants.currentIteration + "/client/";
-    public static String serverPath = "/" + Constants.currentIteration + "/server/";
+    public static String clientPath = "\\src\\" + Constants.currentIteration + "\\client\\";
+    public static String serverPath = "\\src\\" + Constants.currentIteration + "\\server\\";
 }

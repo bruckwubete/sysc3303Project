@@ -87,7 +87,7 @@ public class ServerFileSender extends iteration_2.FileSender {
 	    		sendReceiveSocket.send(sendPacket);
 	    	}
 	    	catch (IOException e){
-	    		e.printStackTrace();
+	    		System.err.println(e.getMessage());
 	    		System.exit(1);
 	    	}
 
@@ -100,14 +100,14 @@ public class ServerFileSender extends iteration_2.FileSender {
     	    		sendReceiveSocket.receive(receivePacket);
     	    		printer.printPacketInfo("FileSender", "Receive", receivePacket);
     	    		if(destPort != receivePacket.getPort()){
-                        System.out.println("Encountered an error packet: UNKNOWN TRANSER ID");
+                        printer.printMessage("Encountered an error packet: UNKNOWN TRANSER ID");
                         byte[] errorCode = Helper.formErrorPacket(Constants.UNKNOWN_TRANSFER_ID, "Packet received from invalid port");
                         DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
                         sendReceiveSocket.send(invalidOpcode);
-                        System.out.println("Sending Error Code");
+                        printer.printMessage("Sending Error Code");
     	    		}
     	    		else if (Helper.isErrorFourResponseValid(receivePacket)){
-    	    		   System.out.println("Error Packet Received: Illegal TFTP operation");
+    	    		   printer.printMessage("Error Packet Received: Illegal TFTP operation");
                        Thread.currentThread().interrupt();
                        return;
     	    		}
@@ -116,26 +116,18 @@ public class ServerFileSender extends iteration_2.FileSender {
     	    		    byte[] errorCode = Helper.formErrorPacket(Constants.ILLEGAL_TFTP_OPERATION, "Ack Op Code not valid");
     	    		    DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
     	    		    sendReceiveSocket.send(invalidOpcode);
-    	    		    System.out.println("Closing server");
+    	    		    printer.printMessage("Closing server");
                         Thread.currentThread().interrupt();
                         return;
     	    		}
     	    		else{
     	    		    break;
     	    		}
-    	    		/*if ( Helper.isAckOpCodeValid(receivePacket) ){
-    	    		    continue;
-    	    		}
-    	    		else {
-    	    		    printer.printMessage("Invalid acknowledge received");
-    	    		    System.exit(1);
-    	    		}
-    	    		*/
     		    }
 
 	    	}
 	    	catch (IOException e){
-	    		e.printStackTrace();
+	    		System.err.println(e.getMessage());
 	    		System.exit(1);
 	    	}
         }
