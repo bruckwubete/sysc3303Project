@@ -1,13 +1,13 @@
-package iteration_3.server;
+package iteration_4.server;
 
 import java.io.*;
 import java.net.*;
 
-import iteration_3.*;
+import iteration_4.*;
 
-public class ServerFileSender extends iteration_3.FileSender {
+public class ServerFileSender extends iteration_4.FileSender {
     
-    
+    int retryCount = 0;
     
     public ServerFileSender(Constants.runType runType){
         printer = new PrintService(runType);
@@ -97,22 +97,51 @@ public class ServerFileSender extends iteration_3.FileSender {
 	    	
 	    	try{
 	    	    while(true){
-    	    		sendReceiveSocket.receive(receivePacket);
+	    	        do{
+                       try{
+                           sendReceiveSocket.setSoTimeout(Constants.SENDER_TIMEOUT);
+                           sendReceiveSocket.receive(receivePacket);
+                           if(Helper.isAckOpCodeValid(receivePacket)){
+                               int packetBlockNumber = (int)(receivePacket.getData()[2])*256 + (int)(receivePacket.getData()[3]);
+                               if(packetBlockNumber == blockNumber-1){
+                                  printer.printPacketInfo("ServerFileSender", "Sending", sendPacket);
+                                  //sendReceiveSocket.send(sendPacket);
+                                  retryCount = 0;
+                               }else{break;}
+                           }else{break;}
+                           
+                       }catch(SocketTimeoutException e){
+                           printer.printMessage("Timed out while waiting for ack packet. Retrying...");
+                           printer.printPacketInfo("ServerFileSender", "Sending", sendPacket);
+                           sendReceiveSocket.send(sendPacket);
+                           retryCount++;
+                           if(retryCount > 2){
+                               printer.printMessage("Failed after waiting for an ack packet 3 times. Quitting...");
+                               return;
+                           }
+                           
+                       }catch (IOException e){
+        	    		System.err.println(e.getMessage());
+        	    		System.exit(1);
+        	    	   }
+                            
+                    }while(retryCount < 3);
+    	    		
     	    		printer.printPacketInfo("FileSender", "Receive", receivePacket);
     	    		if(destPort != receivePacket.getPort()){
                         printer.printMessage("Encountered an error packet: UNKNOWN TRANSER ID");
                         byte[] errorCode = Helper.formErrorPacket(Constants.UNKNOWN_TRANSFER_ID, "Packet received from invalid port");
                         DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
                         sendReceiveSocket.send(invalidOpcode);
-                        printer.printMessage("Sending Error Code");
+                        printer.printMessage("Sending Error Code 5");
     	    		}
     	    		else if (Helper.isErrorThreeResponseValid(receivePacket)){
-    	    			System.out.println("Error Packet Received: Not Enough Space");
+    	    			System.out.println("Error 3 Packet Received: Not Enough Space - " + new String(Helper.dataExtractor(receivePacket)));
                         Thread.currentThread().interrupt();
     	    		    return;
     	    		}
     	    		else if (Helper.isErrorFourResponseValid(receivePacket)){
-    	    		   System.out.println("Error Packet Received: Illegal TFTP operation");
+    	    		   System.out.println("Error 4 Packet Received: Illegal TFTP operation - " + new String(Helper.dataExtractor(receivePacket)));
                        Thread.currentThread().interrupt();
                        return;
     	    		}
@@ -123,7 +152,7 @@ public class ServerFileSender extends iteration_3.FileSender {
                         Thread.currentThread().interrupt();
                         return;
     	    		}else if ( Helper.isErrorThreeResponseValid(receivePacket) ){
-    	    		    printer.printMessage("Received Client disk full error packet ");    	    		  
+    	    		    printer.printMessage("Error 3 Packet Received: Client Disk Full");    	    		  
                         Thread.currentThread().interrupt();
                         return;
     	    		}
@@ -138,7 +167,7 @@ public class ServerFileSender extends iteration_3.FileSender {
 	    		System.exit(1);
 	    	}
         }
-        
+        System.out.println("Successfully finished a write transaction");
         in.close();
     }
 }

@@ -1,12 +1,13 @@
-package iteration_3.client;
+package iteration_4.client;
 
 import java.io.*;
 import java.net.*;
 
-import iteration_3.*;
-public class ClientFileSender extends iteration_3.FileSender {
+import iteration_4.*;
+public class ClientFileSender extends iteration_4.FileSender {
     
         private int expectedPort;
+        private int retryCount = 0;
     
         public ClientFileSender(Constants.runType runType, int expectedPort, DatagramSocket sendReceiveSocket){
             printer = new PrintService(runType);
@@ -45,12 +46,6 @@ public class ClientFileSender extends iteration_3.FileSender {
              * We just read "n" bytes into array data. 
              * Now write them to the output file. 
              */
-            
-            /*blockNumberByte2++;
-            if(blockNumberByte2==0){
-                blockNumberByte1++;
-            }
-            */
             
             if(prevn==512&&n==-1){
                 data = new byte[0];
@@ -92,7 +87,43 @@ public class ClientFileSender extends iteration_3.FileSender {
 	    	
 	    	try{
 	    		while(true){
-	    			sendReceiveSocket.receive(receivePacket);
+	    		    
+	    		    do{
+                       try{
+                           
+                           sendReceiveSocket.setSoTimeout(Constants.SENDER_TIMEOUT);
+                           sendReceiveSocket.receive(receivePacket);
+                           if(Helper.isAckOpCodeValid(receivePacket)){
+                               int packetBlockNumber = (int)(receivePacket.getData()[2])*256 + (int)(receivePacket.getData()[3]);
+                               if(packetBlockNumber == blockNumber-1){
+                                  printer.printPacketInfo("ClientFileSender", "Sending", sendPacket);
+                                //  sendReceiveSocket.send(sendPacket);
+                                  retryCount = 0;
+                              }else{break;}
+                           }else{break;}
+                       }catch(SocketTimeoutException e){
+                           printer.printMessage("Timed out while waiting for ack packet. Retrying...");
+                           printer.printPacketInfo("ClientFileSender", "Sending", sendPacket);
+                           sendReceiveSocket.send(sendPacket);
+                           retryCount++;
+                           if(retryCount > 2){
+                               printer.printMessage("Failed after waiting for an ack packet 3 times. Quitting...");
+                               return;
+                           }
+                           
+                       }catch (IOException e){
+        	    		System.err.println(e.getMessage());
+        	    		System.exit(1);
+        	    	   }
+                            
+                    }while(retryCount < 3);
+	    		    
+	    		    
+	    		    
+	    		    
+	    		    
+	    		    
+	    			//sendReceiveSocket.receive(receivePacket);
 		    		printer.printPacketInfo("FileSender", "Receive", receivePacket);
 	    			
 	    		    if(expectedPort != receivePacket.getPort()){
@@ -100,15 +131,15 @@ public class ClientFileSender extends iteration_3.FileSender {
                         byte[] errorCode = Helper.formErrorPacket(Constants.UNKNOWN_TRANSFER_ID, "Packet received from invalid port");
                         DatagramPacket invalidOpcode = new DatagramPacket(errorCode, errorCode.length, receivePacket.getAddress(), receivePacket.getPort());
                         sendReceiveSocket.send(invalidOpcode);
-                        printer.printMessage("Sending Error Code");
+                        printer.printMessage("Sending Error Code: " + Constants.UNKNOWN_TRANSFER_ID);
     	    		}
     	    		else if (Helper.isErrorThreeResponseValid(receivePacket)){
-    	    			System.out.println("Error Packet Received: Not Enough Space");
+    	    			System.out.println("Error 3 Packet Received: Not Enough Space - " + new String(Helper.dataExtractor(receivePacket)));
     	    		    in.close();
     	    		    return;
     	    		}
     	    		else if (Helper.isErrorFourResponseValid(receivePacket)){
-    	    			System.out.println("Error Packet Received: Illegal TFTP operation");
+    	    			System.out.println("Error 4 Packet Received: Illegal TFTP operation - " + new String(Helper.dataExtractor(receivePacket)));
     	    		    in.close();
     	    		    return;
     	    		}
@@ -122,13 +153,7 @@ public class ClientFileSender extends iteration_3.FileSender {
     	    		else{
     	    		    break;
     	    		}
-    	    		/*else if (Helper.isAckOpCodeValid(receivePacket) ){
-    	    		    continue;
-    	    		}
-    	    		else {
-    	    		    printer.printMessage("Invalid acknowledge received");
-    	    		    System.exit(1);
-    	    		}*/
+    	  
     		    }
 
 	    	}
@@ -138,7 +163,7 @@ public class ClientFileSender extends iteration_3.FileSender {
 	    	}
         }
         
-        printer.printMessage("Successfully finished a write transaction! \n\n");
+        System.out.println("Successfully finished a write transaction! \n\n");
         
         in.close();
     }

@@ -1,4 +1,4 @@
-package iteration_3;
+package iteration_4;
 import java.net.*;
 import java.io.*;
 import java.util.Arrays;
@@ -50,6 +50,12 @@ public class Helper {
         byte[] data = a.getData();
         
         return (data[0]==0 && data[1]==4);
+    }
+    
+    public static boolean isDataLengthValid(DatagramPacket a){
+        byte[] data = a.getData();
+        
+        return (data.length <= 516);
     }
     
     public static boolean isErrorOneResponseValid(DatagramPacket a){
@@ -200,6 +206,34 @@ public class Helper {
     
     public static String getOS(){
         return System.getProperty("os.name").toLowerCase();
+    }
+    
+    public static byte[] getRequestData(String filename, String requestType) throws IOException{
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+            if(requestType.equals("read")){
+	            stream.write(Constants.READ);			 
+	    	}else{
+		    	stream.write(Constants.WRITE);
+    		}
+            
+    		if(Helper.getOS().contains("win")){
+    		    String[] filePathArray = filename.split("\\\\");
+    		    filename = filePathArray[filePathArray.length - 1];    
+    		} 
+    		else{
+    		   String[] filePathArray = filename.split("/");
+    		   filename = filePathArray[filePathArray.length - 1];    
+    		}
+    		
+    		
+
+
+        	stream.write(filename.getBytes());
+	    	stream.write(0);
+	    	stream.write(Constants.FILE_MODES[0]);
+	    	stream.write(0);
+	    	return stream.toByteArray();
     }
     
 }
