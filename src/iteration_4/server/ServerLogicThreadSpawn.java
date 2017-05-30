@@ -81,7 +81,7 @@ public class ServerLogicThreadSpawn extends Thread{
 	                }
 	                else{
 	                    
-	                    filename  = System.getProperty("user.dir").toString() + Constants.getServerPath() + filename;
+	                    filename  = Constants.serverReadWriteLocation + filename;
 	                    File f = new File(filename);
 	                    if(!Files.isReadable(f.toPath())){
 	                        printer.printMessage("File access violation");

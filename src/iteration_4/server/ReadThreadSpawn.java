@@ -18,7 +18,7 @@ public class ReadThreadSpawn extends Thread {
         try {
 
 	        this.fileSender = new ServerFileSender(this.runType);         
-	        this.filename = System.getProperty("user.dir").toString() + Constants.getServerPath() + Helper.getFilename(readRequestPacket);
+	        this.filename = Constants.serverReadWriteLocation + Helper.getFilename(readRequestPacket);
             this.fileSender.send(this.filename, readRequestPacket.getPort(), readRequestPacket.getAddress());
             
 

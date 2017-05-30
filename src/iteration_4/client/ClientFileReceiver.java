@@ -36,7 +36,7 @@ public class ClientFileReceiver extends iteration_4.FileReceiver{
         byte[] ack = new byte[4];
         
         try{
-           
+            filename = Constants.clientReadWriteLocation + filename;
             File f = new File(filename);
           
             bufferedWriter = new FileOutputStream(filename);
@@ -149,6 +149,9 @@ public class ClientFileReceiver extends iteration_4.FileReceiver{
                         if(packetBlockNumber == nextDataPacketNumber){
                             nextDataPacketNumber++;
                             bufferedWriter.write(Helper.dataExtractor(receivePacket));
+                            if(nextDataPacketNumber == 65535){
+                                nextDataPacketNumber = 0;
+                            }
                         }
                                       
                         System.arraycopy(Constants.ACK, 0, ack, 0, 2);

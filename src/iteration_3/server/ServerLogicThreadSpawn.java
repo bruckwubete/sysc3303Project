@@ -1,5 +1,3 @@
-package iteration_3.server;
-
 
 import java.net.*;
 import java.nio.file.Files;

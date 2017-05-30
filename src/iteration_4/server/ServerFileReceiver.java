@@ -114,6 +114,9 @@ public class ServerFileReceiver extends iteration_4.FileReceiver {
                             if((data[2] << 8) + data[3] == nextDataPacketNumber){
                                 bufferedWriter.write(Helper.dataExtractor(receivePacket));
                                 nextDataPacketNumber++;
+                                if(nextDataPacketNumber == 65535){
+                                    nextDataPacketNumber = 0;
+                                }
                             }
                             
                             

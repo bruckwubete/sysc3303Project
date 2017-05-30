@@ -34,8 +34,39 @@ public class Server {
 
     public static void main(String args[]){
         
-	      Scanner scanner = new Scanner(System.in);
-	      String userInputRunType, input;
+        Scanner scanner = new Scanner(System.in);
+        String userInputRunType, input;
+        String directoryInput = "";
+        System.out.println("Enter directory to read/write to, must include full path...(leave blank for default)");
+        while(true) {
+    	      input = scanner.nextLine();
+    	      
+    	      if(input != null){
+    	          if(input.toLowerCase().equals("q")) System.exit(0);
+    	          
+    	          if(input.toLowerCase().equals("")) {
+  	                  Constants.serverReadWriteLocation = System.getProperty("user.dir").toString() + Constants.getServerPath();
+  	                  System.out.println("Default directory chosen: " + Constants.serverReadWriteLocation);
+          	          break;
+      	          }
+    	          String[] parameters = input.split(" ");
+    	          if(parameters.length == 1){
+        	          directoryInput = parameters[0];        	    
+        	          if ( Helper.isValidDirectory(directoryInput) ) {
+        	                if (directoryInput.charAt(directoryInput.length() - 1) != Constants.getSlash().charAt(0) ){
+        	                    Constants.serverReadWriteLocation = directoryInput + Constants.getSlash() ;
+        	                }else {Constants.serverReadWriteLocation = directoryInput;}
+                            System.out.println("Your chosen directory: " + Constants.serverReadWriteLocation);
+                            break;
+                      } else {                          
+                          System.out.println("The path provided is not a valid directory, please provide a valid directory...");
+            	          continue;
+            	      }
+    	          } else {
+    	              System.out.println("Invalid input format!");
+    	          }
+    	      }
+	      }
 	      System.out.println("Press \"q\" to quit the program");
 	      System.out.println("Enter run type: (quiet/verbose)");
           while(true) {

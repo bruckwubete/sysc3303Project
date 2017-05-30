@@ -236,4 +236,14 @@ public class Helper {
 	    	return stream.toByteArray();
     }
     
+    public static int getBlockNumber(DatagramPacket packet){
+        return Byte.toUnsignedInt(packet.getData()[2])*256 + Byte.toUnsignedInt(packet.getData()[3]);
+    }
+    
+    public static boolean isValidDirectory(String path){
+
+        File file = new File(path);        
+        return file.isDirectory();
+    }
+    
 }

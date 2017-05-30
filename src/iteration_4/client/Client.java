@@ -49,10 +49,6 @@ public class Client {
 	    try{
 	        byte requestData[] = Helper.getRequestData(filename, requestType);
 
-	        
-
-
-	    	filename = System.getProperty("user.dir").toString() + Constants.getClientPath() + filename;
               
             if(requestType.equals("read")){
 	            ClientFileReceiver receiver = new ClientFileReceiver(runType);
@@ -137,6 +133,37 @@ public class Client {
 		String input, requestType, runType, mode, filename;
 		
 		scanner = new Scanner(System.in); 
+        String directoryInput = "";
+        System.out.println("Enter directory to read/write to, must include full path...(leave blank for default)");
+        while(true) {
+    	      input = scanner.nextLine();
+    	      
+    	      if(input != null){
+    	          if(input.toLowerCase().equals("q")) System.exit(0);
+    	          
+      	          if(input.toLowerCase().equals("")) {
+  	                  Constants.clientReadWriteLocation = System.getProperty("user.dir").toString() + Constants.getClientPath();
+      	              System.out.println("Default directory chosen: " + Constants.clientReadWriteLocation );
+      	              break;
+      	          }
+    	          String[] parameters = input.split(" ");
+    	          if(parameters.length == 1){
+        	          directoryInput = parameters[0];        	
+        	          if ( Helper.isValidDirectory(directoryInput) ) {
+        	                if (directoryInput.charAt(directoryInput.length() - 1) != Constants.getSlash().charAt(0) ){
+        	                    Constants.clientReadWriteLocation = directoryInput + Constants.getSlash() ;
+        	                }else {Constants.clientReadWriteLocation = directoryInput;}
+                            System.out.println("Your chosen directory: " + Constants.clientReadWriteLocation);
+                            break;
+                      } else {                          
+                          System.out.println("The path provided is not a valid directory, please provide a valid directory...");
+            	          continue;
+            	      }
+    	          } else {
+    	              System.out.println("Invalid input format!");
+    	          }
+    	      }
+	      }
         while(loop){
         	input = null; requestType = null; runType = null; mode = null; filename = null;
     	    System.out.println("Press \"q\" to quit the program");
@@ -165,7 +192,8 @@ public class Client {
             	        filename = parameters[3];
 
             	        if(requestType.equals("write")){
-            	            filename = System.getProperty("user.dir").toString() + Constants.getClientPath() + parameters[3];
+            	            filename = Constants.clientReadWriteLocation + parameters[3];
+            	            System.out.println("This is the chosen path to your file: " + filename);
             	        }
 
             	        File f = new File(filename);
@@ -192,7 +220,8 @@ public class Client {
         	            filename = parameters[1];
         	              
         	            if(requestType.equals("write")){
-            	            filename = System.getProperty("user.dir").toString() + Constants.getClientPath() + parameters[1];
+            	            filename = Constants.clientReadWriteLocation + parameters[1];
+            	            System.out.println("This is the chosen path to your file: " + filename);
             	        }
 
         	            File f = new File(filename);
@@ -216,7 +245,6 @@ public class Client {
         	        }
         	    }
     	    }
-        	
         	if(requestType != null && runType != null && mode != null && filename != null){
     	        Client c = new Client(requestType, runType, mode, filename);
     	        c.sendAndReceive();

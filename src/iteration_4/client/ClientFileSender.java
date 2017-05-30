@@ -61,6 +61,7 @@ public class ClientFileSender extends iteration_4.FileSender {
             System.arraycopy(Constants.DATA, 0, message, 0, 2);
             message[2] = (byte)(blockNumber/256); //blockNumberByte1;
             message[3] = (byte)(blockNumber%256); //blockNumberByte2;
+            System.out.println("Number of bytes read:     " + n + " !!!!!!!!!!!!!!!!!!");
             System.arraycopy(data, 0, message, 4, n);
             if(n<512){
                 byte[] inputData = new byte[n+4];

@@ -21,6 +21,8 @@ public class Constants {
     public static String currentIteration = "iteration_4";
     public static String fileSystemDrive = "D:";
     public static int SENDER_TIMEOUT = 3000;
+    public static String serverReadWriteLocation = "";
+    public static String clientReadWriteLocation = "";
 
 
     public static String getServerPath(){
@@ -39,6 +41,15 @@ public class Constants {
             return "\\src\\" + Constants.currentIteration + "\\client\\";
         } else if (Helper.getOS().contains("linux")){
             return "/" + Constants.currentIteration + "/client/";
+        }
+        return "";
+    }
+    
+    public static String getSlash(){
+        if(Helper.getOS().contains("win")){
+            return "\\";
+        } else if (Helper.getOS().contains("linux")){
+            return "/";
         }
         return "";
     }

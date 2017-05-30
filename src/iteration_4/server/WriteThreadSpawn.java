@@ -21,7 +21,11 @@ public class WriteThreadSpawn extends Thread{
           ack[3] = (byte) 0;
           this.receiver = new ServerFileReceiver(this.runType);
           this.receiver.sendPacket(this.writeRequestPacket.getPort(), this.writeRequestPacket.getAddress(), ack);
-          this.filename = System.getProperty("user.dir").toString() + Constants.getServerPath() + Helper.getFilename(writeRequestPacket);
+          //this.filename = System.getProperty("user.dir").toString() + Constants.getServerPath() + Helper.getFilename(writeRequestPacket);
+          //System.out.println("THIS IS THE FUCKING FILE LOCATION 1" + filename);
+          this.filename = Constants.serverReadWriteLocation + Helper.getFilename(writeRequestPacket);
+          //System.out.println("THIS IS THE FUCKING FILE LOCATION 2" + filename);
+          //this.filename = System.getProperty("user.dir").toString() + Constants.getServerPath() + Helper.getFilename(writeRequestPacket);
           this.receiver.receive(this.filename, this.writeRequestPacket.getPort(), this.writeRequestPacket.getAddress());
           
        
